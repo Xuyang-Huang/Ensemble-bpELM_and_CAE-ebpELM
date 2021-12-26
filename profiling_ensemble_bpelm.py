@@ -31,6 +31,7 @@ AES_Sbox = np.array([
             0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
             ])
 
+
 class ENSEMBLE_BPELM:
     def __init__(self, elm_nodes, bp_epochs, bp_lr=list, bp_cp=1, elm_alpha=1, elm_weight_range=list,
                  elm_bias_range=list, elm_activation='relu', elm_all_standardize=False, elm_weight_init='uniform',
