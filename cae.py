@@ -1,3 +1,9 @@
+#-- coding: utf-8 --
+#@Time : 2021/5/16 23:31
+#@Author : HUANG XUYANG
+#@Email : xhuang032@e.ntu.edu.sg
+#@Software: PyCharm
+
 import tensorflow as tf
 from tensorflow import keras as keras
 import numpy as np
@@ -59,7 +65,7 @@ class CAE:
                 BatchNormalization(),
                 Activation('relu'),
                 MaxPooling1D(4, 4, padding='same')])(x)
-    
+
         for i in range(num_2_strides_pooling - 1):
             if (x.shape[1] * x.shape[2] / 2) < (self.new_input_length / 2):
                 filters = int((self.new_input_length / 2) / (x.shape[1] / 2))
@@ -71,7 +77,7 @@ class CAE:
                 BatchNormalization(),
                 Activation('relu'),
                 MaxPooling1D(2, 2, padding='same')])(x)
-    
+
         if (x.shape[1] * x.shape[2] / 2) < (self.new_input_length / 2):
             filters = int((self.new_input_length / 2) / (x.shape[1] / 2))
         else:
@@ -85,7 +91,7 @@ class CAE:
         model = tf.keras.Model(inputs, outputs, name='encoder')
         model.summary()
         return model, filters_lst
-    
+
     @staticmethod
     def build_decoder(input_shape, filters_lst, num_2_strides_pooling, num_4_strides_pooling):
         inputs = tf.keras.Input(shape=input_shape)
@@ -98,7 +104,7 @@ class CAE:
                 Conv1DTranspose(filters_lst.pop(), 5, 2, activation=None, padding='same'),
                 BatchNormalization(),
                 Activation(tf.nn.leaky_relu)])(x)
-    
+
         for i in range(num_4_strides_pooling):
             x = Sequential([
                     Conv1DTranspose(filters_lst.pop(), 11, 4, activation=None, padding='same'),
@@ -108,21 +114,21 @@ class CAE:
         model = tf.keras.Model(inputs, outputs, name='decoder')
         model.summary()
         return model
-    
+
     def auto_encoder(self, length):
         input_shape = (length, 1)
         num_2_strides_pooling = 0
         num_4_strides_pooling = 0
-    
+
         tmp_length = length
         while tmp_length > 64:
             tmp_length /= 4
             num_4_strides_pooling += 1
-    
+
         while tmp_length > 4:
             tmp_length /= 2
             num_2_strides_pooling += 1
-    
+
         encoder, filters_lst = self.build_encoder(input_shape, num_2_strides_pooling, num_4_strides_pooling)
         decoder = self.build_decoder(encoder.output_shape[1:], filters_lst, num_2_strides_pooling, num_4_strides_pooling)
         inputs = Input(shape=input_shape)
@@ -200,6 +206,3 @@ if __name__ == "__main__":
 
     cae = CAE(IoI, traces.max(), traces.min())
     cae.train(traces[:50000, :], model_save_path=f'./models/CAE_model.h5', epochs=40, batch_size=256)
-
-
-

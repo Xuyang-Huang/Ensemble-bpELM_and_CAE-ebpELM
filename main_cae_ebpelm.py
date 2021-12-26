@@ -1,3 +1,9 @@
+#-- coding: utf-8 --
+#@Time : 2021/5/16 23:31
+#@Author : HUANG XUYANG
+#@Email : xhuang032@e.ntu.edu.sg
+#@Software: PyCharm
+
 from get_traces import get_traces
 from profiling_ensemble_bpelm import ENSEMBLE_BPELM
 from cae import CAE
