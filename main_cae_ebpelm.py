@@ -1,9 +1,3 @@
-#-- coding: utf-8 --
-#@Time : 2021/5/16 23:31
-#@Author : HUANG XUYANG
-#@Email : xhuang032@e.ntu.edu.sg
-#@Software: PyCharm
-
 from get_traces import get_traces
 from profiling_ensemble_bpelm import ENSEMBLE_BPELM
 from cae import CAE
@@ -27,7 +21,7 @@ if __name__ == "__main__":
            13: [23600, 24624],
            14: [50000, 51024],
            15: [19700, 20724]}
-    model_path = './models/CAE_model.h5'
+    model_path = './models/CAE_model_desync100.h5'
     data_path = './ASCAD/ATMega8515_raw_traces.h5'
     traces, pt, key = get_traces(data_path, [0, 100000], 0)
     traces_profiling = traces[:50000]
@@ -41,9 +35,9 @@ if __name__ == "__main__":
     ########### Keep the max and min same as training. ###########
     cae = CAE(IoI, traces_profiling.max(), traces_profiling.min())
 
-    for i_byte in range(16):
-        tmp_traces_profiling = cae.encoder_preprocessing(traces_profiling, model_path, i_byte)
-        tmp_traces_attack = cae.encoder_preprocessing(traces_attack, model_path, i_byte)
+    for i_byte in range(2,3):
+        tmp_traces_profiling = cae.encoder_preprocessing(traces_profiling, model_path, i_byte).reshape([len(traces_profiling), -1])
+        tmp_traces_attack = cae.encoder_preprocessing(traces_attack, model_path, i_byte).reshape([len(traces_attack), -1])
         caf_elm = ENSEMBLE_BPELM(elm_nodes=256, bp_epochs=5, bp_lr=[1, 0.1], bp_cp=2, elm_alpha=1, elm_weight_range=[-1, 1],
                                  elm_bias_range=[0, 1])
 
