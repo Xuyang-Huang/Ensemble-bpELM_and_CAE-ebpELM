@@ -42,7 +42,7 @@ class CAE:
     def preprocess(sefl, data, batch_size):
         AUTOTUNE = tf.data.AUTOTUNE
         ds = tf.data.Dataset.from_tensor_slices(data)
-        ds = ds.shuffle(30000, reshuffle_each_iteration=True)
+        ds = ds.shuffle(50000, reshuffle_each_iteration=True)
         ds = ds.map(sefl.random_select)
         ds = ds.batch(batch_size).prefetch(buffer_size=AUTOTUNE)
         return ds
