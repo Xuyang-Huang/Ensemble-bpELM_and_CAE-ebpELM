@@ -28,7 +28,4 @@ if __name__ == "__main__":
     traces, _, _ = get_traces('./ASCAD/ATMega8515_raw_traces.h5', [0, 100000], desync=100)
 
     cae = CAE(IoI)
-    cae.train(traces, model_save_path=f'./models/CAE_model', epochs=200, batch_size=512)
-
-
-
+    cae.train(traces, model_save_path=f'./models/auto_encoder_model', epochs=200, batch_size=512)
