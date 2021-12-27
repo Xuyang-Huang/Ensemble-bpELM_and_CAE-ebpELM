@@ -4,7 +4,12 @@
  Check this article for details: ***A Backpropagation Extreme Learning Machine Approach to Fast Training Neural Network-Based Side-Channel Attack*** (AsianHOST2021).
 
  Authors: Xuyang Huang, Ming Ming Wong, Anh Tuan Do, Wang Ling Goh.
- # How to use
+
+ *Institute of Microelectronics (IME), A*STAR Singapore, Singapore.*
+
+ *School of Electrical and Electronic Engineering, Nanyang Technological University, Singapore.*
+
+# How to use
 ## Download datasets
 ASCAD: [page link](https://github.com/ANSSI-FR/ASCAD/blob/master/ATMEGA_AES_v1/ATM_AES_v1_fixed_key/Readme.md)
 
