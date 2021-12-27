@@ -5,7 +5,7 @@
 
  Authors: Xuyang Huang, Ming Ming Wong, Anh Tuan Do, Wang Ling Goh.
 
- *Institute of Microelectronics (IME), A*STAR Singapore, Singapore.*
+ *Institute of Microelectronics (IME), A\*STAR Singapore, Singapore.*
 
  *School of Electrical and Electronic Engineering, Nanyang Technological University, Singapore.*
 
