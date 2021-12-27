@@ -13,17 +13,13 @@ from tensorflow.keras import Sequential
 
 
 class CAE:
-    """Convolutional Auto-Encoder. Layer number will automatically adjust according to input length.
+    """Convolutional Auto-Encoder.
 
     Attributes:
         interval_dict: A dict including the IoIs of corresponding subkeys.
-        max: max value of traces, for data rescaling.
-        min: min value of traces, for data rescaling.
     """
-    def __init__(self, interval_dict, max, min):
+    def __init__(self, interval_dict):
         self.interval_dict = interval_dict
-        self.max = max
-        self.min = min
         input_length = interval_dict[0][1] - interval_dict[0][0]
         self.new_input_length = int(2 ** np.ceil(np.log2(input_length)))
         self.encoder = None
@@ -35,7 +31,7 @@ class CAE:
         start_point = self.interval_dict[byte_idx][0] - (self.new_input_length - raw_length)//2
         end_point = self.interval_dict[byte_idx][1] + (self.new_input_length - raw_length) - (self.new_input_length - raw_length)//2
         data = data[start_point: end_point, tf.newaxis]
-        data = (data - self.min)/(self.max - self.min)
+        # data = (data - self.min)/(self.max - self.min)
         return (data, data)
 
     def preprocess(sefl, data, batch_size):
@@ -46,69 +42,43 @@ class CAE:
         ds = ds.batch(batch_size).prefetch(buffer_size=AUTOTUNE)
         return ds
 
-    def build_encoder(self, input_shape, num_2_strides_pooling, num_4_strides_pooling):
+    @staticmethod
+    def build_encoder(input_shape):
         inputs = tf.keras.Input(shape=input_shape)
-        filters_lst = [4]
-        x = Sequential([
-            Conv1D(4, 11, strides=1, activation=None, padding='same'),
-            BatchNormalization(),
-            Activation('relu')])(inputs)
-        for i in range(num_4_strides_pooling):
-            if (x.shape[1] * x.shape[2] / 4) < (self.new_input_length / 2):
-                filters = int((self.new_input_length / 2) / (x.shape[1] / 4))
-            else:
-                filters = 4
-            filters_lst.append(filters)
-            x = Sequential([
-                Conv1D(filters, 11, strides=1, activation=None, padding='same'),
+        def seq(filters, kernel, pool):
+            sub_model = Sequential([
+                Conv1D(filters, kernel, strides=1, activation=None, padding='same'),
                 BatchNormalization(),
                 Activation('relu'),
-                MaxPooling1D(4, 4, padding='same')])(x)
-
-        for i in range(num_2_strides_pooling - 1):
-            if (x.shape[1] * x.shape[2] / 2) < (self.new_input_length / 2):
-                filters = int((self.new_input_length / 2) / (x.shape[1] / 2))
-            else:
-                filters = 4
-            filters_lst.append(filters)
-            x = Sequential([
-                Conv1D(filters, 5, strides=1, activation=None, padding='same'),
-                BatchNormalization(),
-                Activation('relu'),
-                MaxPooling1D(2, 2, padding='same')])(x)
-
-        if (x.shape[1] * x.shape[2] / 2) < (self.new_input_length / 2):
-            filters = int((self.new_input_length / 2) / (x.shape[1] / 2))
-        else:
-            filters = 4
-        filters_lst.append(filters)
-        outputs = Sequential([
-            Conv1D(filters, 5, strides=1, activation=None, padding='same'),
-            BatchNormalization(),
-            Activation('relu'),
-            MaxPooling1D(2, 2, padding='same')])(x)
+                MaxPooling1D(pool, pool, padding='same')])
+            return sub_model
+        x = seq(16, 11, 4)(inputs)
+        x = seq(32, 7, 4)(x)
+        x = seq(64, 5, 4)(x)
+        x = seq(128, 3, 2)(x)
+        x = seq(128, 3, 2)(x)
+        x = seq(256, 3, 2)(x)
+        outputs = Conv1D(256, 3, strides=1, activation='sigmoid', padding='same')(x)
         model = tf.keras.Model(inputs, outputs, name='encoder')
         model.summary()
-        return model, filters_lst
+        return model
 
     @staticmethod
-    def build_decoder(input_shape, filters_lst, num_2_strides_pooling, num_4_strides_pooling):
+    def build_decoder(input_shape):
         inputs = tf.keras.Input(shape=input_shape)
-        x = Sequential([
-            Conv1DTranspose(filters_lst.pop(), 5, 2, activation=None, padding='same'),
-            BatchNormalization(),
-            Activation(tf.nn.leaky_relu)])(inputs)
-        for i in range(num_2_strides_pooling - 1):
-            x = Sequential([
-                Conv1DTranspose(filters_lst.pop(), 5, 2, activation=None, padding='same'),
+        def seq(filters, kernel, stride):
+            sub_model = Sequential([
+                Conv1DTranspose(filters, kernel, stride, activation=None, padding='same'),
                 BatchNormalization(),
-                Activation(tf.nn.leaky_relu)])(x)
-
-        for i in range(num_4_strides_pooling):
-            x = Sequential([
-                    Conv1DTranspose(filters_lst.pop(), 11, 4, activation=None, padding='same'),
-                    BatchNormalization(),
-                    Activation(tf.nn.leaky_relu)])(x)
+                Activation(tf.nn.leaky_relu)])
+            return sub_model
+        x = Conv1DTranspose(256, 3, 1, activation=tf.nn.leaky_relu, padding='same')(inputs)
+        x = seq(256, 3, 2)(x)
+        x = seq(128, 3, 2)(x)
+        x = seq(128, 3, 2)(x)
+        x = seq(64, 5, 4)(x)
+        x = seq(32, 7, 4)(x)
+        x = Conv1DTranspose(16, 11, 4, activation=tf.nn.leaky_relu, padding='same')(x)
         outputs = Conv1DTranspose(1, 3, 1, activation=None, padding='same')(x)
         model = tf.keras.Model(inputs, outputs, name='decoder')
         model.summary()
@@ -120,7 +90,7 @@ class CAE:
         num_4_strides_pooling = 0
 
         tmp_length = length
-        while tmp_length > 64:
+        while tmp_length > 8:
             tmp_length /= 4
             num_4_strides_pooling += 1
 
@@ -128,8 +98,8 @@ class CAE:
             tmp_length /= 2
             num_2_strides_pooling += 1
 
-        encoder, filters_lst = self.build_encoder(input_shape, num_2_strides_pooling, num_4_strides_pooling)
-        decoder = self.build_decoder(encoder.output_shape[1:], filters_lst, num_2_strides_pooling, num_4_strides_pooling)
+        encoder = self.build_encoder(input_shape)
+        decoder = self.build_decoder(encoder.output_shape[1:])
         inputs = Input(shape=input_shape)
         x = encoder(inputs)
         outputs = decoder(x)
@@ -156,14 +126,13 @@ class CAE:
         train_ds, val_ds = self.preprocess_ds(input_data, batch_size)
         model = self.get_model()
         callbacks = tf.keras.callbacks.ModelCheckpoint(model_save_path, monitor='val_loss', verbose=0,
-                                                       save_best_only=True, save_weights_only=True, mode='auto',
+                                                       save_best_only=True, save_weights_only=False, mode='auto',
                                                        save_freq='epoch', options=None)
 
         model.fit(x=train_ds, epochs=epochs, validation_data=val_ds, callbacks=callbacks)
 
     def encoder_inference(self, model_path):
-        model = self.auto_encoder(self.new_input_length)
-        model.load_weights(model_path)
+        model = tf.keras.models.load_model(model_path)
         encoder = keras.Model(inputs=model.get_layer('encoder').input, outputs=model.get_layer('encoder').output)
         return encoder
 
@@ -174,13 +143,11 @@ class CAE:
         start_point = self.interval_dict[i_byte][0] - (self.new_input_length - raw_length) // 2
         end_point = self.interval_dict[i_byte][1] + (self.new_input_length - raw_length) - (
                     self.new_input_length - raw_length) // 2
-
-        output_data = self.encoder.predict(self.rescale(data[:, start_point:end_point]))
-
+        data = data[:, start_point:end_point]
+        output_data = self.encoder.predict(data)
         return output_data
 
-    def rescale(self, data):
-        return (data - self.min) / (self.max - self.min)
+
 
 
 
