@@ -1,7 +1,7 @@
 # Ensemble-bpELM & CAE-ebpELM
  Two fast training profiled DL-SCA models against synchronized or de-synchronized masked AES. (Don't forget hitting ⭐️STAR out there ↗️)
 
- Check this article for details: ***A Backpropagation Extreme Learning Machine Approach to Fast Training Neural Network-Based Side-Channel Attack*** (AsianHOST2021).
+ Check this article for details: ***A Backpropagation Extreme Learning Machine Approach to Fast Training Neural Network-Based Side-Channel Attack*** (AsianHOST2021) [DOI: 10.1109/AsianHOST53231.2021.9699677](https://doi.org/10.1109/AsianHOST53231.2021.9699677).
 
  Authors: Xuyang Huang, Ming Ming Wong, Anh Tuan Do, Wang Ling Goh.
 
